@@ -1,17 +1,28 @@
 package main
 
-import "github.com/thebluefowl/tunnely/tcpserver"
+import (
+	"fmt"
+
+	"github.com/thebluefowl/tunnely/httpserver"
+	"github.com/thebluefowl/tunnely/store"
+	"github.com/thebluefowl/tunnely/tcpserver"
+)
 
 func main() {
 
-	// s := server.Server{
-	// 	Port: 6969,
-	// 	Host: "tunnely.xyz:6969",
-	// }
-	// s.Start()
+	store := store.GetTunnelStore()
 
-	ts := tcpserver.NewTCPServer(4200)
-	if err := ts.Listen(); err != nil {
-		panic(err)
+	go func() {
+		ts := tcpserver.NewTCPServer(4200, store)
+		if err := ts.Listen(); err != nil {
+			fmt.Println(err)
+		}
+	}()
+
+	s := httpserver.Server{
+		Port: 6969,
+		Host: "tunnely.xyz:6969",
 	}
+	s.Start()
+
 }

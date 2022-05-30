@@ -1,9 +1,12 @@
 package tunnel
 
 import (
-	"crypto/rand"
+	"math/rand"
 	"net"
+	"time"
 )
+
+const charset = "abcdefghijklmnopqrstuvwxyz"
 
 type Tunnel struct {
 	ID        string
@@ -13,16 +16,19 @@ type Tunnel struct {
 
 func NewTunnel(id string, conn net.Conn) *Tunnel {
 	return &Tunnel{
-		ID:        id,
-		Subdomain: randString(8),
+		ID: id,
+		// Subdomain: randomString(7),
+		Subdomain: "abc",
 		Conn:      conn,
 	}
 }
 
-func randString(n int) string {
+// randomString generates a random alphabetical string of length `n`
+func randomString(n int) string {
+	rand.Seed(time.Now().UnixNano())
 	b := make([]byte, n)
-	if _, err := rand.Read(b); err != nil {
-		panic(err)
+	for i := range b {
+		b[i] = charset[rand.Intn((len(charset)))]
 	}
 	return string(b)
 }

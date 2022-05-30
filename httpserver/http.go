@@ -13,7 +13,7 @@ var controlHost *echo.Echo
 type Server struct {
 	Host  string
 	Port  int
-	Store store.DomainStore
+	Store store.TunnelStore
 }
 
 func (s *Server) address() string {
@@ -33,7 +33,7 @@ func (s *Server) getControlHost() *echo.Echo {
 }
 
 func (s *Server) Start() {
-	s.Store = store.GetInMemoryDomainStore()
+	s.Store = store.GetTunnelStore()
 
 	e := echo.New()
 	e.Any("/*", func(c echo.Context) (err error) {

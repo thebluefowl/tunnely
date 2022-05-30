@@ -10,20 +10,22 @@ import (
 )
 
 const (
-	CmdInit  = "INI"
-	CmdClose = "FIN"
+	CmdInit        = "INIT"
+	CmdClose       = "FINI"
+	CmdListDomains = "LSTD"
+	CmdPing        = "PING"
 )
 
 type TCPServer struct {
 	Port  int64
-	store store.DomainStore
+	store store.TunnelStore
 }
 
-func NewTCPServer(port int64) *TCPServer {
+func NewTCPServer(port int64, store store.TunnelStore) *TCPServer {
 	server := &TCPServer{
 		Port: port,
 	}
-	server.store = store.GetInMemoryDomainStore()
+	server.store = store
 	return server
 }
 
@@ -43,23 +45,45 @@ func (ts *TCPServer) Listen() error {
 		go func() {
 			for {
 				reader := bufio.NewReader(c)
-				bytes, err := reader.Peek(3)
+				bytes, err := reader.Peek(4)
+				if err != nil {
+					fmt.Println(err)
+					continue
+				}
 				switch string(bytes) {
 				case CmdInit:
-					reader.Discard(3)
+					reader.Discard(4)
 					bytes, err = reader.Peek(20)
+					if err != nil {
+						fmt.Println(err)
+						continue
+					}
 					id := string(bytes)
 					reader.Discard(20)
 					ts.store.AddTunnel(tunnel.NewTunnel(id, c))
-				}
-				x, _, _ := reader.ReadLine()
-
-				if err != nil {
-
 					return
+				case CmdListDomains:
+					fmt.Println(ts.store.GetIDs())
+				case CmdPing:
+					reader.Discard(4)
+					bytes, err := reader.Peek(20)
+					if err != nil {
+						fmt.Println(err)
+						continue
+					}
+					id := string(bytes)
+					tunnel := ts.store.GetTunnelByID(id)
+					_, err = tunnel.Conn.Write([]byte("Pong"))
+					if err != nil {
+						fmt.Println(err)
+						return
+					}
 				}
+
+				x, _, _ := reader.ReadLine()
 				fmt.Println(string(x))
 			}
 		}()
+		fmt.Println("here")
 	}
 }
